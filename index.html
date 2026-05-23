@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculateur de Quantités Festives</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); position: relative; }
+        
+        /* Sélecteur de langue en haut à droite */
+        .lang-selector { position: absolute; top: 20px; right: 20px; display: flex; gap: 8px; }
+        .flag { font-size: 24px; cursor: pointer; transition: transform 0.2s; user-select: none; opacity: 0.6; }
+        .flag.active { opacity: 1; transform: scale(1.2); }
+        .flag:hover { opacity: 1; }
+
+        h1 { text-align: center; color: #2c3e50; font-size: 22px; margin-top: 15px; margin-bottom: 5px; padding-right: 80px; text-align: left; }
+        @media (max-width: 480px) { h1 { padding-right: 0; text-align: center; margin-top: 35px; } }
+
+        .subtitle { text-align: center; color: #7f8c8d; font-size: 13px; margin-bottom: 25px; text-align: left; }
+        @media (max-width: 480px) { .subtitle { text-align: center; } }
+
+        .tabs { display: flex; margin-bottom: 25px; border-bottom: 2px solid #e0e0e0; }
+        .tab { flex: 1; text-align: center; padding: 12px; cursor: pointer; font-weight: bold; color: #7f8c8d; transition: all 0.3s; }
+        .tab.active { color: #2ecc71; border-bottom: 3px solid #2ecc71; }
+        .input-group { display: flex; gap: 20px; margin-bottom: 25px; }
+        .input-field { flex: 1; display: flex; flex-direction: column; }
+        label { font-size: 14px; font-weight: 600; margin-bottom: 8px; color: #34495e; }
+        input { padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; text-align: center; }
+        
+        .results { background: #f9f9f9; padding: 20px; border-radius: 8px; border-left: 5px solid #2ecc71; margin-bottom: 20px; }
+        .results h3 { margin-top: 0; color: #2c3e50; font-size: 15px; }
+        
+        ul { list-style: none; padding: 0; margin: 0; }
+        li { border-bottom: 1px solid #eee; }
+        li:last-child { border-bottom: none; }
+        
+        .item-header { padding: 15px 0; display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; }
+        .item-header:hover { color: #2ecc71; }
+        .item-title { display: flex; align-items: center; gap: 10px; font-weight: 500; }
+        .arrow { font-size: 12px; color: #95a5a6; transition: transform 0.2s; }
+        .open .arrow { transform: rotate(90deg); }
+        
+        .unit { font-weight: bold; color: #27ae60; background: #e8f8f0; padding: 4px 8px; border-radius: 4px; font-size: 14px; }
+        
+        .item-details { max-height: 0; overflow: hidden; transition: max-height 0.2s ease-out; background: #fff; padding: 0 15px; border-radius: 6px; }
+        .open .item-details { max-height: 200px; padding: 12px 15px; margin-bottom: 10px; border: 1px dashed #e0e0e0; }
+        
+        .detail-row { display: flex; justify-content: space-between; font-size: 13px; color: #555; margin-bottom: 6px; }
+        .detail-row:last-child { margin-bottom: 0; padding-top: 6px; border-top: 1px solid #eee; font-weight: bold; color: #2c3e50; }
+
+        .total-box { background: #2c3e50; color: white; padding: 15px 20px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 17px; }
+        .total-amount { color: #2ecc71; font-size: 22px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Barre des Langues -->
+    <div class="lang-selector">
+        <span class="flag active" id="flag-fr" onclick="changeLang('fr')">🇫🇷</span>
+        <span class="flag" id="flag-en" onclick="changeLang('en')">🇬🇧</span>
+        <span class="flag" id="flag-es" onclick="changeLang('es')">🇪🇸</span>
+    </div>
+
+    <h1 id="txt-title">🛒 Combien Pour Ma Party ?</h1>
+    <div class="subtitle" id="txt-subtitle">Indices de prix mis à jour : Mai 2026</div>
+    
+    <div class="tabs">
+        <div class="tab active" id="tab-bbq" onclick="switchTab('bbq')">🔥 Barbecue</div>
+        <div class="tab" id="tab-apero" onclick="switchTab('apero')">🥂 Apéro Dînatoire</div>
+    </div>
+
+    <div class="input-group">
+        <div class="input-field">
+            <label id="lbl-adults" for="adults">Nombre d'adultes</label>
+            <input type="number" id="adults" value="10" min="0" oninput="calculate()">
+        </div>
+        <div class="input-field">
+            <label id="lbl-children" for="children">Nombre d'enfants</label>
+            <input type="number" id="children" value="4" min="0" oninput="calculate()">
+        </div>
+    </div>
+
+    <div class="results">
+        <h3 id="txt-list-title">📋 Votre liste (Cliquez sur un produit pour voir le budget) :</h3>
+        <ul id="list-output">
+            <!-- Injecté dynamiquement -->
+        </ul>
+    </div>
+
+    <div class="total-box">
+        <span id="txt-total-label">💰 Budget Total Estimé :</span>
+        <span class="total-amount" id="total-price">0.00 €</span>
+    </div>
+</div>
+
+<script>
+    let currentMode = 'bbq';
+    let currentLang = 'fr';
+
+    const dict = {
+        fr: {
+            title: "🛒 Combien Pour Ma Party ?", subtitle: "Indices de prix mis à jour : Mai 2026",
+            bbq: "🔥 Barbecue d'été", apero: "🥂 Apéro Dînatoire",
+            adults: "Nombre d'adultes", children: "Nombre d'enfants",
+            listTitle: "📋 Votre liste (Cliquez pour voir le budget caché) :", totalLabel: "💰 Budget Total Estimé :",
+            ex: "Exemples :", avgPrice: "Prix Moyen constaté :", subtotal: "Sous-total :", type: "Type :", comp: "Composition :", format: "Format :",
+            items: {
+                viande: "Saucisses / Merguez", viandeEx: "Merguez, Chipolatas, Porc",
+                broch: "Brochettes", brochEx: "Poulet mariné, Bœuf poivrons",
+                salade: "Salades & Accompagnements", saladeEx: "Taboulé, Piémontaise, Chips",
+                pain: "Baguettes de pain", painEx: "Baguette classique ou Tradition",
+                rose: "Bouteilles de Rosé / Rouge", roseEx: "Vin de pays / Entrée de gamme sympa",
+                soft: "Softs & Eau", softEx: "Cola, Thé glacé, Eaux",
+                piecesS: "Pièces salées", piecesSEx: "Mini-quiches, feuilletés, nems",
+                chips: "Chips & Biscuits", chipsEx: "Chips salées, Bretzels, Cacahuètes",
+                biere: "Bières (33cl)", biereEx: "Canettes ou bouteilles (Blonde)",
+                bulles: "Vin blanc & Bulles", bullesEx: "Prosecco, Crémant, Sauvignon",
+                piecesSu: "Mignardises sucrées", piecesSuEx: "Mini-éclairs, macarons, chouquettes"
+            }
+        },
+        en: {
+            title: "🛒 How Much For My Party?", subtitle: "Price index updated: May 2026",
+            bbq: "🔥 Summer BBQ", apero: "🥂 Cocktail Party",
+            adults: "Number of adults", children: "Number of children",
+            listTitle: "📋 Your list (Click an item to reveal the budget):", totalLabel: "💰 Estimated Total Budget:",
+            ex: "Examples:", avgPrice: "Average Price:", subtotal: "Subtotal:", type: "Type:", comp: "Composition:", format: "Format:",
+            items: {
+                viande: "Sausages & Grill meats", viandeEx: "Merguez, Chipolatas, Pork",
+                broch: "Skewers / Kebabs", brochEx: "Marinated chicken, Beef & peppers",
+                salade: "Salads & Sides", saladeEx: "Tabouli, Potato salad, Crisps",
+                pain: "Baguette bread", painEx: "Classic or Traditional Baguette",
+                rose: "Bottles of Rosé / Red", roseEx: "Local wine / Nice entry-level",
+                soft: "Softs & Water", softEx: "Cola, Iced tea, Still/Sparkling water",
+                piecesS: "Savory finger food", piecesSEx: "Mini-quiches, puff pastries",
+                chips: "Chips & Snacks", chipsEx: "Salted crisps, Pretzels, Peanuts",
+                biere: "Beers (33cl)", biereEx: "Cans or bottles (Standard Lager)",
+                bulles: "White wine & Sparkles", bullesEx: "Prosecco, Crémant, Sauvignon",
+                piecesSu: "Sweet pastries", piecesSuEx: "Mini-eclairs, macarons, profiteroles"
+            }
+        },
+        es: {
+            title: "🛒 ¿Cuánto Para Mi Fiesta?", subtitle: "Índice de precios actualizado: Mayo 2026",
+            bbq: "🔥 Barbacoa de verano", apero: "🥂 Cóctel / Aperitivo",
+            adults: "Número de adultos", children: "Número de niños",
+            listTitle: "📋 Tu lista (Haz clic para ver el presupuesto):", totalLabel: "💰 Presupuesto Total Estimado:",
+            ex: "Ejemplos:", avgPrice: "Precio Medio:", subtotal: "Subtotal:", type: "Tipo:", comp: "Composición:", format: "Formato:",
+            items: {
+                viande: "Salchichas / Barbacoa", viandeEx: "Merguez, Salchichas, Cerdo",
+                broch: "Brochetas", brochEx: "Pollo marinado, Ternera con pimientos",
+                salade: "Ensaladas y Guarnición", saladeEx: "Tabulé, Ensalada de patata, Patatas",
+                pain: "Barras de pan (Baguette)", painEx: "Baguette clásica o Tradicional",
+                rose: "Botellas de Rosado / Tinto", roseEx: "Vino de la casa / Gama media decente",
+                soft: "Refrescos y Agua", softEx: "Cola, Té frío, Agua con/sin gas",
+                piecesS: "Canapés salados", piecesSEx: "Mini-quiches, hojaldres, empanadillas",
+                chips: "Patatas fritas y Snacks", chipsEx: "Patatas saladas, Bretzels, Cacahuetes",
+                biere: "Cervezas (33cl)", biereEx: "Latas o botellas (Rubia estándar)",
+                bulles: "Vino blanco y Cavas", bullesEx: "Prosecco, Cava, Sauvignon",
+                piecesSu: "Dulces y Postres", piecesSuEx: "Mini-eclairs, macarons, lionesas"
+            }
+        }
+    };
+
+    function changeLang(lang) {
+        currentLang = lang;
+        ['fr', 'en', 'es'].forEach(l => document.getElementById(`flag-${l}`).classList.toggle('active', l === lang));
+        
+        // Traduction des textes fixes
+        document.getElementById('txt-title').innerText = dict[lang].title;
+        document.getElementById('txt-subtitle').innerText = dict[lang].subtitle;
+        document.getElementById('tab-bbq').innerText = dict[lang].bbq;
+        document.getElementById('tab-apero').innerText = dict[lang].apero;
+        document.getElementById('lbl-adults').innerText = dict[lang].adults;
+        document.getElementById('lbl-children').innerText = dict[lang].children;
+        document.getElementById('txt-list-title').innerText = dict[lang].listTitle;
+        document.getElementById('txt-total-label').innerText = dict[lang].totalLabel;
+        
+        calculate();
+    }
+
+    function switchTab(mode) {
+        currentMode = mode;
+        document.getElementById('tab-bbq').classList.toggle('active', mode === 'bbq');
+        document.getElementById('tab-apero').classList.toggle('active', mode === 'apero');
+        calculate();
+    }
+
+    function toggleItem(element) {
+        element.parentElement.classList.toggle('open');
+    }
+
+    function calculate() {
+        const adults = parseInt(document.getElementById('adults').value) || 0;
+        const children = parseInt(document.getElementById('children').value) || 0;
+        const listOutput = document.getElementById('list-output');
+        const t = dict[currentLang];
+        let html = '';
+        let globalTotal = 0;
+
+        if (currentMode === 'bbq') {
+            const viandeKg = ((adults * 200) + (children * 100)) / 1000;
+            const brochettesQty = (adults * 2) + (children * 1);
+            const saladeKg = ((adults * 200) + (children * 100)) / 1000;
+            const painQty = Math.ceil((adults * 0.5) + (children * 0.25));
+            const roseQty = Math.ceil(adults / 3);
+            const softQty = Math.ceil(((adults + children) * 0.5));
+
+            const coutViande = viandeKg * 11.50;
+            const coutBrochettes = brochettesQty * 1.60; 
+            const coutSalade = saladeKg * 6.50;
+            const coutPain = painQty * 1.15;
+            const coutRose = roseQty * 5.50;
+            const coutSoft = softQty * 1.60;
+
+            globalTotal = coutViande + coutBrochettes + coutSalade + coutPain + coutRose + coutSoft;
+
+            html += `
+                <li>
+                    <div class="item-header" onclick="toggleItem(this)">
+                        <span class="item-title"><span class="arrow">▶</span> 🥩 ${t.items.viande}</span>
+                        <span class="unit">${viandeKg.toFixed(2)} kg</span>
+                    </div>
+                    <div class="item-details">
+                        <div class="detail-row"><span>${t.ex}</span> <span>${t.items.viandeEx}</span></div>
+                        <div class="detail-row"><span>${t.avgPrice}</span> <span>11,50 € / kg</span></div>
+                        <div class="detail-row"><span>${t.subtotal}</span> <span>${coutViande.toFixed(2)} €</span></div>
+                    </div>
+                </li>
+                <li>
+                    <div class="item-header" onclick="toggleItem(this)">
+                        <span class="item-title"><span class="arrow">▶</span> 🍢 ${t.items.broch}</span>
+                        <span class="unit">${brochettesQty} pcs</span>
+                    </div>
+                    <div class="item-details">
+                        <div class="detail-row"><span>${t.ex}</span> <span>${t.items.brochEx}</span></div>
+                        <div class="detail-row"><span>${t.avgPrice}</span> <span>1,60 € / u</span></div>
+                        <div class="detail-row"><span>${t.subtotal}</span> <span>${coutBrochettes.toFixed(2)} €</span></div>
+                    </div>
+                </li>
+                <li>
+                    <div class="item-header" onclick="toggleItem(this)">
+                        <span class="item-title"><span class="arrow">▶</span> 🥗 ${t.items.salade}</span>
+                        <span class="unit">${saladeKg.toFixed(2)} kg</span>
+                    </div>
+                    <div class="item-details">
+                        <div class="detail-row"><span>${t.ex}</span> <span>${t.items.saladeEx}</span></div>
+                        <div class="detail-row"><span>${t.avgPrice}</span> <span>6,50 € / kg</span></div>
+                        <div class="detail-row"><span>${t.subtotal}</span> <span>${coutSalade.toFixed(2)} €</span></div>
+                    </div>
+                </li>
+                <li>
+                    <div class="item-header" onclick="toggleItem(this)">
+                        <span class="item-title"><span class="arrow">▶</span> 🥖 ${t.items.pain}</span>
+                        <span class="unit">${painQty} pcs</span>
+                    </div>
+                    <div class="item-details">
+                        <div class="detail-row"><span>${t.type}</span> <span>${t.items.painEx}</span></div>
+                        <div class="detail-row"><span>${t.avgPrice}</span> <span>1,15 € / u</span></div>
+                        <div class="detail-row"><span>${t.subtotal}</span> <span>${coutPain.toFixed(2)} €</span></div>
+                    </div>
+                </li>
+                <li>
+                    <div class="item-header" onclick="toggleItem(this)">
+                        <span class="item-title"><span class="arrow">▶</span> 🍷 ${t.items.rose}</span>
+                        <span class="unit">${roseQty} bout.</span>
+                    </div>
+                    <div class="item-details">
+                        <div class="detail-row"><span>${t.type}</span> <span>${t.items.roseEx}</span></div>
+                        <div class="detail-row"><span>${t.avgPrice}</span> <span>5,50 € / u</span></div>
+                        <div class="detail-row"><span>${t.subtotal}</span> <span>${coutRose.toFixed(2)} €</span></div>
+                    </div>
+                </li>
+                <li>
+                    <div class="item-header" onclick="toggleItem(this)">
+                        <span class="item-title"><span class="arrow">▶</span> 🥤 ${t.items.soft}</span>
+                        <span class="unit">${softQty} L</span>
+                    </div>
+                    <div class="item-details">
+                        <div class="detail-row"><span>${t.comp}</span> <span>${t.items.softEx}</span></div>
+                        <div class="detail-row"><span>${t.avgPrice}</span> <span>1,60 € / L</span></div>
+                        <div class="detail-row"><span>${t.subtotal}</span> <span>${coutSoft.toFixed(2)} €</span></div>
+                    </div>
+                </li>`;
+        } else {
+            const piecesSalees = (adults * 12) + (children * 6);
+            const chipsG = (adults * 30) + (children * 20);
+            const bieresQty = adults * 2;
+            const alcoolBout = Math.ceil(adults / 4);
+            const softQty = Math.ceil(((adults + children) * 0.5));
+            const piecesSucrees = (adults * 3) + (children * 2);
+
+            const coutSalees = piecesSalees * 0.45;
+            const coutChips = (chipsG / 1000) * 14.00;
+            const coutBieres = bieresQty * 1.30;
+            const coutAlcool = alcoolBout * 7.50;
+            const coutSoft = softQty * 1.60;
+            const coutSucrees = piecesSucrees * 0.55;
+
+            globalTotal = coutSalees + coutChips + coutBieres + coutAlcool + coutSoft + coutSucrees;
+
+            html += `
+                <li>
+                    <div class="item-header" onclick="toggleItem(this)">
+                        <span class="item-title"><span class="arrow">▶</span> 🍕 ${t.items.piecesS}</span>
+                        <span class="unit">${piecesSalees} pcs</span>
+                    </div>
+                    <div class="item-details">
+                        <div class="detail-row"><span>${t.ex}</span> <span>${t.items.piecesSEx}</span></div>
+                        <div class="detail-row"><span>${t.avgPrice}</span> <span>0,45 € / u</span></div>
+                        <div class="detail-row"><span>${t.subtotal}</span> <span>${coutSalees.toFixed(2)} €</span></div>
+                    </div>
+                </li>
+                <li>
+                    <div class="item-header" onclick="toggleItem(this)">
+                        <span class="item-title"><span class="arrow">▶</span> 🥔 ${t.items.chips}</span>
+                        <span class="unit">${chipsG} g</span>
+                    </div>
+                    <div class="item-details">
+                        <div class="detail-row"><span>${t.ex}</span> <span>${t.items.chipsEx}</span></div>
+                        <div class="detail-row"><span>${t.avgPrice}</span> <span>14,00 € / kg</span></div>
+                        <div class="detail-row"><span>${t.subtotal}</span> <span>${coutChips.toFixed(2)} €</span></div>
+                    </div>
+                </li>
+                <li>
+                    <div class="item-header" onclick="toggleItem(this)">
+                        <span class="item-title"><span class="arrow">▶</span> 🍺 ${t.items.biere}</span>
+                        <span class="unit">${bieresQty} pcs</span>
+                    </div>
+                    <div class="item-details">
+                        <div class="detail-row"><span>${t.format}</span> <span>${t.items.biereEx}</span></div>
+                        <div class="detail-row"><span>${t.avgPrice}</span> <span>1,30 € / u</span></div>
+                        <div class="detail-row"><span>${t.subtotal}</span> <span>${coutBieres.toFixed(2)} €</span></div>
+                    </div>
+                </li>
+                <li>
+                    <div class="item-header" onclick="toggleItem(this)">
+                        <span class="item-title"><span class="arrow">▶</span> 🍾 ${t.items.bulles}</span>
+                        <span class="unit">${alcoolBout} bout.</span>
+                    </div>
+                    <div class="item-details">
+                        <div class="detail-row"><span>${t.ex}</span> <span>${t.items.bullesEx}</span></div>
+                        <div class="detail-row"><span>${t.avgPrice}</span> <span>7,50 € / u</span></div>
+                        <div class="detail-row"><span>${t.subtotal}</span> <span>${coutAlcool.toFixed(2)} €</span></div>
+                    </div>
+                </li>
+                <li>
+                    <div class="item-header" onclick="toggleItem(this)">
+                        <span class="item-title"><span class="arrow">▶</span> 🥤 ${t.items.soft}</span>
+                        <span class="unit">${softQty} L</span>
+                    </div>
+                    <div class="item-details">
+                        <div class="detail-row"><span>${t.comp}</span> <span>${t.items.softEx}</span></div>
+                        <div class="detail-row"><span>${t.avgPrice}</span> <span>1,60 € / L</span></div>
+                        <div class="detail-row"><span>${t.subtotal}</span> <span>${coutSoft.toFixed(2)} €</span></div>
+                    </div>
+                </li>
+                <li>
+                    <div class="item-header" onclick="toggleItem(this)">
+                        <span class="item-title"><span class="arrow">▶</span> 🍰 ${t.items.piecesSu}</span>
+                        <span class="unit">${piecesSucrees} pcs</span>
+                    </div>
+                    <div class="item-details">
+                        <div class="detail-row"><span>${t.ex}</span> <span>${t.items.piecesSuEx}</span></div>
+                        <div class="detail-row"><span>${t.avgPrice}</span> <span>0,55 € / u</span></div>
+                        <div class="detail-row"><span>${t.subtotal}</span> <span>${coutSucrees.toFixed(2)} €</span></div>
+                    </div>
+                </li>`;
+        }
+
+        listOutput.innerHTML = html;
+        document.getElementById('total-price').innerText = `${globalTotal.toFixed(2)} €`;
+    }
+
+    // Lancement par défaut
+    calculate();
+</script>
+
+</body>
+</html>
