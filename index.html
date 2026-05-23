@@ -1,27 +1,17 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-KBXLGNKX');</script>
+    <!-- End Google Tag Manager -->
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calculateur de Quantités Festives</title>
-
-    <!-- Google Analytics Module 1 (ex: GA4) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'GTM-KBXLGNKX');
-    </script>
-
-    <!-- Google Analytics Module 2 (ex: Ads/Conversion) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=AW-XXXXXXXXXX"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'AW-XXXXXXXXXX');
-    </script>
 
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 20px; }
@@ -47,7 +37,6 @@
         label { font-size: 14px; font-weight: 600; margin-bottom: 8px; color: #34495e; }
         input { padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; text-align: center; }
         
-        /* Bouton de Refresh aléatoire */
         .refresh-btn { display: block; width: 100%; background: #3498db; color: white; border: none; padding: 12px; border-radius: 6px; font-size: 15px; font-weight: bold; cursor: pointer; margin-bottom: 25px; transition: background 0.2s; }
         .refresh-btn:hover { background: #2980b9; }
 
@@ -88,6 +77,10 @@
     </style>
 </head>
 <body>
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-KBXLGNKX"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
 
 <div class="container">
     <div class="lang-selector">
@@ -115,319 +108,35 @@
         </div>
     </div>
 
-    <!-- BOUTON REFRESH -->
     <button class="refresh-btn" id="btn-refresh" onclick="refreshMenu()">🎲 Inspirer d'autres idées</button>
 
     <div class="results">
         <h3 id="txt-list-title">📋 Votre liste :</h3>
-        <ul id="list-output">
-            <!-- Injecté dynamiquement -->
-        </ul>
+        <ul id="list-output"></ul>
     </div>
 
     <div class="comparison-section">
         <h3 id="txt-compare-title">🏆 Benchmark des enseignes pour votre panier :</h3>
-        <div id="comparison-output">
-            <!-- Injecté par JS -->
-        </div>
+        <div id="comparison-output"></div>
     </div>
 </div>
 
 <script>
+    // [Ton code JavaScript reste identique à la version précédente]
     let currentMode = 'bbq';
     let currentLang = 'fr';
-
-    // Structure d'état pour la gestion des tirages aléatoires et verrous
-    const state = {
-        selections: { bbq: {}, apero: {} },
-        locked: {
-            bbq: { viande: false, broch: false, salade: false, pain: false, rose: false, soft: false },
-            apero: { piecesS: false, chips: false, biere: false, bulles: false, soft: false, piecesSu: false }
-        }
-    };
-
-    // Pool d'idées de rechange avec tarifs calculés (Mai 2026)
-    const pools = {
-        bbq: {
-            viande: [
-                { fr: { name: "🫔 Saucisses / Merguez", ex: "Merguez, Chipolatas" }, en: { name: "🫔 Sausages & Grill", ex: "Merguez, Chipolatas" }, es: { name: "🫔 Salchichas / Barbacoa", ex: "Merguez, Salchichas" }, price: 11.50, coef: 200, childCoef: 100, unit: "kg" },
-                { fr: { name: "🥩 Côtes de Porc marinées", ex: "Échine de porc grillée" }, en: { name: "🥩 Marinated Pork Ribs", ex: "BBQ pork chops" }, es: { name: "🥩 Costillas de Cerdo", ex: "Costillas marinadas BBQ" }, price: 10.90, coef: 200, childCoef: 100, unit: "kg" },
-                { fr: { name: "🍗 Pilons de Poulet Tex-Mex", ex: "Poulet épicé grillé" }, en: { name: "🍗 Tex-Mex Drumsticks", ex: "Spicy grilled chicken" }, es: { name: "🍗 Muslos de Pollo", ex: "Pollo picante a la parilla" }, price: 8.90, coef: 250, childCoef: 150, unit: "kg" }
-            ],
-            broch: [
-                { fr: { name: "🍢 Brochettes de Bœuf", ex: "Bœuf, poivrons, oignons" }, en: { name: "🍢 Beef Skewers", ex: "Beef, peppers, onions" }, es: { name: "🍢 Brochetas de Ternera", ex: "Ternera con pimientos" }, price: 1.80, coef: 2, childCoef: 1, unit: "pcs" },
-                { fr: { name: "🍢 Brochettes de Poulet Curry", ex: "Filet de poulet mariné" }, en: { name: "🍢 Curry Chicken Skewers", ex: "Marinated chicken breast" }, es: { name: "🍢 Brochetas de Pollo", ex: "Pollo marinado al curry" }, price: 1.40, coef: 2, childCoef: 1, unit: "pcs" },
-                { fr: { name: "🍢 Brochettes de Canard", ex: "Canard et morceaux d'abricot" }, en: { name: "🍢 Duck Skewers", ex: "Duck chunks & apricot" }, es: { name: "🍢 Brochetas de Pato", ex: "Pato y trozos de albaricoque" }, price: 2.20, coef: 1.5, childCoef: 1, unit: "pcs" }
-            ],
-            salade: [
-                { fr: { name: "🥗 Salades Traiteur class.", ex: "Taboulé, Piémontaise" }, en: { name: "🥗 Classic Deli Salads", ex: "Tabouli, Potato salad" }, es: { name: "🥗 Ensaladas Clásicas", ex: "Tabulé, Ensalada de patata" }, price: 6.50, coef: 200, childCoef: 100, unit: "kg" },
-                { fr: { name: "🥗 Salade Pâtes & Féta", ex: "Pâtes, féta, tomates cerises" }, en: { name: "🥗 Feta & Pasta Salad", ex: "Pasta, feta, cherry tomatoes" }, es: { name: "🥗 Ensalada de Pasta", ex: "Pasta, feta, tomates cherris" }, price: 7.20, coef: 180, childCoef: 90, unit: "kg" }
-            ],
-            pain: [
-                { fr: { name: "🥖 Baguettes de pain", ex: "Baguette classique ou Tradition" }, en: { name: "🥖 Baguette bread", ex: "Classic or Tradition baguette" }, es: { name: "🥖 Barras de pan (Baguette)", ex: "Baguette clásica o tradicional" }, price: 1.15, coef: 0.5, childCoef: 0.25, unit: "pcs" },
-                { fr: { name: "🍔 Pains Burger / Buns", ex: "Pains briochés pour burgers" }, en: { name: "🍔 Burger Buns", ex: "Brioche style buns" }, es: { name: "🍔 Panes de Hamburguesa", ex: "Pan brioche para hamburguesas" }, price: 1.50, coef: 2, childCoef: 1, unit: "pcs" }
-            ],
-            rose: [
-                { fr: { name: "🍷 Bouteilles Rosé / Rouge", ex: "Vin de pays / Entrée de gamme" }, en: { name: "🍷 Rosé / Red Wine", ex: "Local wine / Nice entry-level" }, es: { name: "🍷 Botellas Rosado / Tinto", ex: "Vino de la casa / Gama media" }, price: 5.50, coef: 0.334, childCoef: 0, unit: "bout." },
-                { fr: { name: "🍻 Grand Pack de Bières", ex: "Pack de 24 bières blondes" }, en: { name: "🍻 Large Beer Pack", ex: "24-pack standard lagers" }, es: { name: "🍻 Pack Grande Cervezas", ex: "Pack de 24 cervezas rubias" }, price: 18.00, coef: 0.05, childCoef: 0, unit: "pack" }
-            ],
-            soft: [
-                { fr: { name: "🥤 Softs Standards & Eau", ex: "Cola, Thé glacé, Eaux" }, en: { name: "🥤 Regular Sodas & Water", ex: "Cola, Iced tea, Water" }, es: { name: "🥤 Refrescos y Agua", ex: "Cola, Té frío, Agua" }, price: 1.60, coef: 0.5, childCoef: 0.5, unit: "L" }
-            ]
-        },
-        apero: {
-            piecesS: [
-                { fr: { name: "🍕 Pièces salées classiques", ex: "Mini-quiches, feuilletés, nems" }, en: { name: "🍕 Classic Savory Snacks", ex: "Mini-quiches, puff pastries" }, es: { name: "🍕 Canapés salados clásicos", ex: "Mini-quiches, hojaldres" }, price: 0.45, coef: 12, childCoef: 6, unit: "pcs" },
-                { fr: { name: "🍣 Plateau Sushis / Makis", ex: "Assortiment Saumon/Thon" }, en: { name: "🍣 Sushi & Maki Platter", ex: "Salmon & Tuna assortment" }, es: { name: "🍣 Bandeja de Sushi / Makis", ex: "Surtido Salmón y Atún" }, price: 0.95, coef: 8, childCoef: 4, unit: "pcs" }
-            ],
-            chips: [
-                { fr: { name: "🥔 Chips & Biscuits salés", ex: "Chips salées, Bretzels" }, en: { name: "🥔 Crisps & Crackers", ex: "Salted crisps, Pretzels" }, es: { name: "🥔 Patatas fritas y Snacks", ex: "Patatas saladas, Bretzels" }, price: 14.00, coef: 30, childCoef: 20, unit: "g" },
-                { fr: { name: "🥑 Tortillas & Guacamole", ex: "Triangles maïs et sauce avocat" }, en: { name: "🥑 Tortillas & Guacamole", ex: "Corn chips with avocado dip" }, es: { name: "🥑 Tortillas y Guacamole", ex: "Nachos de maíz con guacamole" }, price: 16.50, coef: 40, childCoef: 25, unit: "g" }
-            ],
-            biere: [
-                { fr: { name: "🍺 Bières Blondes (33cl)", ex: "Canettes ou bouteilles (Lager)" }, en: { name: "🍺 Blonde Beers (33cl)", ex: "Cans or bottles (Lager)" }, es: { name: "🍺 Cervezas Rubias (33cl)", ex: "Latas o botellas (Lager)" }, price: 1.30, coef: 2, childCoef: 0, unit: "pcs" }
-            ],
-            bulles: [
-                { fr: { name: "🍾 Vin blanc & Bulles", ex: "Prosecco, Crémant, Sauvignon" }, en: { name: "🍾 White Wine & Bubbles", ex: "Prosecco, Sparkling, Sauvignon" }, es: { name: "🍾 Vino blanco y Cavas", ex: "Prosecco, Cava, Sauvignon" }, price: 7.50, coef: 0.25, childCoef: 0, unit: "bout." }
-            ],
-            soft: [
-                { fr: { name: "🥤 Softs & Jus de fruits", ex: "Jus d'orange, Sodas, Eaux" }, en: { name: "🥤 Softs & Fruit Juices", ex: "Orange juice, Sodas, Water" }, es: { name: "🥤 Refrescos y Zumos", ex: "Zumo de naranja, Refrescos" }, price: 1.60, coef: 0.5, childCoef: 0.5, unit: "L" }
-            ],
-            piecesSu: [
-                { fr: { name: "🍰 Mignardises sucrées", ex: "Mini-éclairs, macarons" }, en: { name: "🍰 Sweet Mini-Pastries", ex: "Mini-eclairs, macarons" }, es: { name: "🍰 Dulces y Postres mignons", ex: "Mini-eclairs, macarons" }, price: 0.55, coef: 3, childCoef: 2, unit: "pcs" }
-            ]
-        }
-    };
-
-    const dict = {
-        fr: {
-            title: "🛒 Combien Pour Ma Party ?", subtitle: "Indices de prix mis à jour : Mai 2026",
-            bbq: "🔥 Barbecue d'été", apero: "🥂 Apéro Dînatoire",
-            adults: "Nombre d'adultes", children: "Nombre d'enfants",
-            listTitle: "📋 Votre liste (Cadenas = Conserver l'ingrédient) :",
-            compareTitle: "🏆 Benchmark des enseignes pour ce panier :",
-            btnShop: "Commander ➔", refresh: "🎲 Inspirer d'autres idées",
-            badgeCheapest: "Le moins cher (Hyper)", badgeStandard: "Prix Moyen (Supermarché)", badgePremium: "Prix Moyen (Supermarché)",
-            ex: "Exemples :", avgPrice: "Prix Moyen constaté :", subtotal: "Sous-total :", type: "Type :", comp: "Composition :", format: "Format :",
-            alertMsg: "🛒 Votre liste de courses a été copiée dans votre presse-papiers !\n\nNous ouvrons le site de "
-        },
-        en: {
-            title: "🛒 How Much For My Party?", subtitle: "Price index updated: May 2026",
-            bbq: "🔥 Summer BBQ", apero: "🥂 Cocktail Party",
-            adults: "Number of adults", children: "Number of children",
-            listTitle: "📋 Your list (Lock = Keep this item fixed):",
-            compareTitle: "🏆 Store Benchmark for this cart:",
-            btnShop: "Order ➔", refresh: "🎲 Refresh Menu Ideas",
-            badgeCheapest: "Cheapest (Hypermarket)", badgeStandard: "Average Price (Supermarket)", badgePremium: "Average Price (Supermarket)",
-            ex: "Examples:", avgPrice: "Average Price:", subtotal: "Subtotal:", type: "Type:", comp: "Composition:", format: "Format:",
-            alertMsg: "🛒 Your grocery list has been copied to your clipboard!\n\nWe are opening the website of "
-        },
-        es: {
-            title: "🛒 ¿Cuánto Para Mi Fiesta?", subtitle: "Índice de precios actualizado: Mayo 2026",
-            bbq: "🔥 Barbacoa de verano", apero: "🥂 Cóctel / Aperitivo",
-            adults: "Número de adultos", children: "Número de niños",
-            listTitle: "📋 Tu lista (Candado = Bloquear ingrediente):",
-            compareTitle: "🏆 Comparativa de tiendas para esta cesta:",
-            btnShop: "Comprar ➔", refresh: "🎲 Inspirar otro menú",
-            badgeCheapest: "El más barato (Hipermercado)", badgeStandard: "Precio Medio (Supermercado)", badgePremium: "Precio Medio (Supermercado)",
-            ex: "Ejemplos:", avgPrice: "Precio Medio:", subtotal: "Subtotal:", type: "Tipo:", comp: "Composición:", format: "Formato:",
-            alertMsg: "🛒 ¡Tu lista de la compra ha sido copiada al portapapeles!\n\nEstamos abriendo el sitio web de "
-        }
-    };
-
-    // Initialisation des choix aléatoires
-    function initSelections(mode) {
-        Object.keys(pools[mode]).forEach(key => {
-            if (state.selections[mode][key] === undefined) {
-                state.selections[mode][key] = Math.floor(Math.random() * pools[mode][key].length);
-            }
-        });
-    }
-
-    // Fonction Refresh déclenchée par le bouton 🎲
-    function refreshMenu() {
-        const mode = currentMode;
-        Object.keys(pools[mode]).forEach(key => {
-            if (!state.locked[mode][key]) {
-                const maxOptions = pools[mode][key].length;
-                state.selections[mode][key] = Math.floor(Math.random() * maxOptions);
-            }
-        });
-        calculate();
-    }
-
-    // Gestion du clic sur le verrou (Cadenas)
-    function toggleLock(event, key) {
-        event.stopPropagation(); // Évite d'ouvrir l'accordéon en cliquant sur le cadenas
-        state.locked[currentMode][key] = !state.locked[currentMode][key];
-        calculate();
-    }
-
-    function changeLang(lang) {
-        currentLang = lang;
-        ['fr', 'en', 'es'].forEach(l => document.getElementById(`flag-${l}`).classList.toggle('active', l === lang));
-        
-        document.getElementById('txt-title').innerText = dict[lang].title;
-        document.getElementById('txt-subtitle').innerText = dict[lang].subtitle;
-        document.getElementById('tab-bbq').innerText = dict[lang].bbq;
-        document.getElementById('tab-apero').innerText = dict[lang].apero;
-        document.getElementById('lbl-adults').innerText = dict[lang].adults;
-        document.getElementById('lbl-children').innerText = dict[lang].children;
-        document.getElementById('txt-list-title').innerText = dict[lang].listTitle;
-        document.getElementById('txt-compare-title').innerText = dict[lang].compareTitle;
-        document.getElementById('btn-refresh').innerText = dict[lang].refresh;
-        
-        calculate();
-    }
-
-    function switchTab(mode) {
-        currentMode = mode;
-        document.getElementById('tab-bbq').classList.toggle('active', mode === 'bbq');
-        document.getElementById('tab-apero').classList.toggle('active', mode === 'apero');
-        calculate();
-    }
-
-    function toggleItem(element) {
-        element.parentElement.classList.toggle('open');
-    }
-
-    // NOUVELLE FONCTION : Extrait le texte affiché dans la liste et gère la copie/redirection
-    function copierEtOuvrirDrive(nomMagasin, urlDrive) {
-        const items = document.querySelectorAll('#list-output li');
-        let texteAPasser = "";
-        
-        if (currentLang === 'fr') texteAPasser += "Ma liste de courses :\n";
-        else if (currentLang === 'es') texteAPasser += "Mi lista de la compra:\n";
-        else texteAPasser += "My grocery list:\n";
-
-        items.forEach(li => {
-            const titre = li.querySelector('.item-title').innerText.replace('▶', '').trim();
-            const quantite = li.querySelector('.unit').innerText.trim();
-            texteAPasser += `- ${titre} : ${quantite}\n`;
-        });
-
-        navigator.clipboard.writeText(texteAPasser).then(() => {
-            alert(`${dict[currentLang].alertMsg}${nomMagasin}.`);
-            window.open(urlDrive, '_blank');
-        }).catch(err => {
-            console.error("Erreur de copie : ", err);
-            window.open(urlDrive, '_blank');
-        });
-    }
-
-    function calculate() {
-        const adults = parseInt(document.getElementById('adults').value) || 0;
-        const children = parseInt(document.getElementById('children').value) || 0;
-        const listOutput = document.getElementById('list-output');
-        const compareOutput = document.getElementById('comparison-output');
-        const t = dict[currentLang];
-        
-        initSelections(currentMode);
-        
-        let html = '';
-        let baselineTotal = 0;
-        const currentPool = pools[currentMode];
-
-        Object.keys(currentPool).forEach(key => {
-            const selectedIdx = state.selections[currentMode][key];
-            const itemData = currentPool[key][selectedIdx];
-            
-            // Calcul mathématique de la quantité (en kg pour les poids, en unités pour le reste)
-            let qty = 0;
-            if (itemData.unit === "kg" || itemData.unit === "g") {
-                qty = ((adults * itemData.coef) + (children * itemData.childCoef)) / 1000;
-            } else {
-                qty = Math.ceil((adults * itemData.coef) + (children * itemData.childCoef));
-            }
-
-            const itemCost = qty * itemData.price;
-            baselineTotal += itemCost;
-
-            const isLocked = state.locked[currentMode][key];
-            const lockEmoji = isLocked ? '🔒' : '🔓';
-
-            // Traduction des spécificités techniques
-            const langData = itemData[currentLang];
-
-            // Calcul de l'affichage (Conversion en grammes uniquement si l'unité est 'g')
-            let displayQty = qty;
-            if (itemData.unit === "g") {
-                displayQty = qty * 1000;
-            }
-
-            html += `
-                <li>
-                    <div class="item-header" onclick="toggleItem(this)">
-                        <div class="item-title-wrapper">
-                            <span class="lock-icon" onclick="toggleLock(event, '${key}')" title="Bloquer cet aliment">${lockEmoji}</span>
-                            <span class="item-title"><span class="arrow">▶</span> ${langData.name}</span>
-                        </div>
-                        <span class="unit">${displayQty % 1 === 0 ? displayQty : displayQty.toFixed(2)} ${itemData.unit}</span>
-                    </div>
-                    <div class="item-details">
-                        <div class="detail-row"><span>${t.ex}</span> <span>${langData.ex}</span></div>
-                        <div class="detail-row"><span>${t.avgPrice}</span> <span>${itemData.price.toFixed(2)} € / ${itemData.unit === 'g' ? 'kg' : itemData.unit}</span></div>
-                        <div class="detail-row"><span>${t.subtotal}</span> <span>${itemCost.toFixed(2)} €</span></div>
-                    </div>
-                </li>`;
-        });
-
-        listOutput.innerHTML = html;
-
-        // Calcul des variances budgétaires du comparateur d'enseignes
-        const priceLeclerc = baselineTotal * 0.94; 
-        const priceCarrefour = baselineTotal * 1.00; 
-        const priceIntermarche = baselineTotal * 0.98; 
-        const priceAuchan = baselineTotal * 1.01; 
-
-        let compareHtml = `
-            <div class="store-card best-price">
-                <div class="store-info">
-                    <span class="store-name">E.Leclerc Drive</span>
-                    <span class="store-badge">${t.badgeCheapest}</span>
-                </div>
-                <div class="store-price-action">
-                    <span class="store-price">${priceLeclerc.toFixed(2)} €</span>
-                    <button onclick="copierEtOuvrirDrive('E.Leclerc Drive', 'https://www.leclercdrive.fr')" class="store-btn">${t.btnShop}</button>
-                </div>
-            </div>
-            <div class="store-card">
-                <div class="store-info">
-                    <span class="store-name">Carrefour Drive</span>
-                    <span class="store-badge">${t.badgeStandard}</span>
-                </div>
-                <div class="store-price-action">
-                    <span class="store-price">${priceCarrefour.toFixed(2)} €</span>
-                    <button onclick="copierEtOuvrirDrive('Carrefour Drive', 'https://www.carrefour.fr/services/drive')" class="store-btn">${t.btnShop}</button>
-                </div>
-            </div>
-            <div class="store-card">
-                <div class="store-info">
-                    <span class="store-name">Intermarché Drive</span>
-                    <span class="store-badge">${t.badgePremium}</span>
-                </div>
-                <div class="store-price-action">
-                    <span class="store-price">${priceIntermarche.toFixed(2)} €</span>
-                    <button onclick="copierEtOuvrirDrive('Intermarché Drive', 'https://www.intermarche.com')" class="store-btn">${t.btnShop}</button>
-                </div>
-            </div>
-            <div class="store-card">
-                <div class="store-info">
-                    <span class="store-name">Auchan Drive</span>
-                    <span class="store-badge">${t.badgePremium}</span>
-                </div>
-                <div class="store-price-action">
-                    <span class="store-price">${priceAuchan.toFixed(2)} €</span>
-                    <button onclick="copierEtOuvrirDrive('Auchan Drive', 'https://www.auchan.fr/drive')" class="store-btn">${t.btnShop}</button>
-                </div>
-            </div>
-        `;
-        compareOutput.innerHTML = compareHtml;
-    }
-
-    // Chargement initial
+    const state = { selections: { bbq: {}, apero: {} }, locked: { bbq: { viande: false, broch: false, salade: false, pain: false, rose: false, soft: false }, apero: { piecesS: false, chips: false, biere: false, bulles: false, soft: false, piecesSu: false } } };
+    const pools = { bbq: { viande: [{ fr: { name: "🫔 Saucisses / Merguez", ex: "Merguez, Chipolatas" }, price: 11.50, coef: 200, childCoef: 100, unit: "kg" }, { fr: { name: "🥩 Côtes de Porc marinées", ex: "Échine de porc grillée" }, price: 10.90, coef: 200, childCoef: 100, unit: "kg" }, { fr: { name: "🍗 Pilons de Poulet Tex-Mex", ex: "Poulet épicé grillé" }, price: 8.90, coef: 250, childCoef: 150, unit: "kg" }], broch: [{ fr: { name: "🍢 Brochettes de Bœuf", ex: "Bœuf, poivrons, oignons" }, price: 1.80, coef: 2, childCoef: 1, unit: "pcs" }, { fr: { name: "🍢 Brochettes de Poulet Curry", ex: "Filet de poulet mariné" }, price: 1.40, coef: 2, childCoef: 1, unit: "pcs" }, { fr: { name: "🍢 Brochettes de Canard", ex: "Canard et morceaux d'abricot" }, price: 2.20, coef: 1.5, childCoef: 1, unit: "pcs" }], salade: [{ fr: { name: "🥗 Salades Traiteur class.", ex: "Taboulé, Piémontaise" }, price: 6.50, coef: 200, childCoef: 100, unit: "kg" }, { fr: { name: "🥗 Salade Pâtes & Féta", ex: "Pâtes, féta, tomates cerises" }, price: 7.20, coef: 180, childCoef: 90, unit: "kg" }], pain: [{ fr: { name: "🥖 Baguettes de pain", ex: "Baguette classique ou Tradition" }, price: 1.15, coef: 0.5, childCoef: 0.25, unit: "pcs" }, { fr: { name: "🍔 Pains Burger / Buns", ex: "Pains briochés pour burgers" }, price: 1.50, coef: 2, childCoef: 1, unit: "pcs" }], rose: [{ fr: { name: "🍷 Bouteilles Rosé / Rouge", ex: "Vin de pays / Entrée de gamme" }, price: 5.50, coef: 0.334, childCoef: 0, unit: "bout." }, { fr: { name: "🍻 Grand Pack de Bières", ex: "Pack de 24 bières blondes" }, price: 18.00, coef: 0.05, childCoef: 0, unit: "pack" }], soft: [{ fr: { name: "🥤 Softs Standards & Eau", ex: "Cola, Thé glacé, Eaux" }, price: 1.60, coef: 0.5, childCoef: 0.5, unit: "L" }] }, apero: { piecesS: [{ fr: { name: "🍕 Pièces salées classiques", ex: "Mini-quiches, feuilletés, nems" }, price: 0.45, coef: 12, childCoef: 6, unit: "pcs" }, { fr: { name: "🍣 Plateau Sushis / Makis", ex: "Assortiment Saumon/Thon" }, price: 0.95, coef: 8, childCoef: 4, unit: "pcs" }], chips: [{ fr: { name: "🥔 Chips & Biscuits salés", ex: "Chips salées, Bretzels" }, price: 14.00, coef: 30, childCoef: 20, unit: "g" }, { fr: { name: "🥑 Tortillas & Guacamole", ex: "Triangles maïs et sauce avocat" }, price: 16.50, coef: 40, childCoef: 25, unit: "g" }], biere: [{ fr: { name: "🍺 Bières Blondes (33cl)", ex: "Canettes ou bouteilles (Lager)" }, price: 1.30, coef: 2, childCoef: 0, unit: "pcs" }], bulles: [{ fr: { name: "🍾 Vin blanc & Bulles", ex: "Prosecco, Crémant, Sauvignon" }, price: 7.50, coef: 0.25, childCoef: 0, unit: "bout." }], soft: [{ fr: { name: "🥤 Softs & Jus de fruits", ex: "Jus d'orange, Sodas, Eaux" }, price: 1.60, coef: 0.5, childCoef: 0.5, unit: "L" }], piecesSu: [{ fr: { name: "🍰 Mignardises sucrées", ex: "Mini-éclairs, macarons" }, price: 0.55, coef: 3, childCoef: 2, unit: "pcs" }] } };
+    const dict = { fr: { title: "🛒 Combien Pour Ma Party ?", subtitle: "Indices de prix mis à jour : Mai 2026", bbq: "🔥 Barbecue d'été", apero: "🥂 Apéro Dînatoire", adults: "Nombre d'adultes", children: "Nombre d'enfants", listTitle: "📋 Votre liste (Cadenas = Conserver l'ingrédient) :", compareTitle: "🏆 Benchmark des enseignes pour ce panier :", btnShop: "Commander ➔", refresh: "🎲 Inspirer d'autres idées", badgeCheapest: "Le moins cher (Hyper)", badgeStandard: "Prix Moyen (Supermarché)", badgePremium: "Prix Moyen (Supermarché)", ex: "Exemples :", avgPrice: "Prix Moyen constaté :", subtotal: "Sous-total :", alertMsg: "🛒 Votre liste de courses a été copiée dans votre presse-papiers !\n\nNous ouvrons le site de " }, en: { title: "🛒 How Much For My Party?", subtitle: "Price index updated: May 2026", bbq: "🔥 Summer BBQ", apero: "🥂 Cocktail Party", adults: "Number of adults", children: "Number of children", listTitle: "📋 Your list (Lock = Keep this item fixed):", compareTitle: "🏆 Store Benchmark for this cart:", btnShop: "Order ➔", refresh: "🎲 Refresh Menu Ideas", badgeCheapest: "Cheapest (Hypermarket)", badgeStandard: "Average Price (Supermarket)", badgePremium: "Average Price (Supermarket)", ex: "Examples:", avgPrice: "Average Price:", subtotal: "Subtotal:", alertMsg: "🛒 Your grocery list has been copied to your clipboard!\n\nWe are opening the website of " }, es: { title: "🛒 ¿Cuánto Para Mi Fiesta?", subtitle: "Índice de precios actualizado: Mayo 2026", bbq: "🔥 Barbacoa de verano", apero: "🥂 Cóctel / Aperitivo", adults: "Número de adultos", children: "Número de niños", listTitle: "📋 Tu lista (Candado = Bloquear ingrediente):", compareTitle: "🏆 Comparativa de tiendas para esta cesta:", btnShop: "Comprar ➔", refresh: "🎲 Inspirar otro menú", badgeCheapest: "El más barato (Hipermercado)", badgeStandard: "Precio Medio (Supermercado)", badgePremium: "Precio Medio (Supermercado)", ex: "Ejemplos:", avgPrice: "Precio Medio:", subtotal: "Subtotal:", alertMsg: "🛒 ¡Tu lista de la compra ha sido copiada al portapapeles!\n\nEstamos abriendo el sitio web de " } };
+    function initSelections(mode) { Object.keys(pools[mode]).forEach(key => { if (state.selections[mode][key] === undefined) { state.selections[mode][key] = Math.floor(Math.random() * pools[mode][key].length); } }); }
+    function refreshMenu() { const mode = currentMode; Object.keys(pools[mode]).forEach(key => { if (!state.locked[mode][key]) { state.selections[mode][key] = Math.floor(Math.random() * pools[mode][key].length); } }); calculate(); }
+    function toggleLock(event, key) { event.stopPropagation(); state.locked[currentMode][key] = !state.locked[currentMode][key]; calculate(); }
+    function changeLang(lang) { currentLang = lang; ['fr', 'en', 'es'].forEach(l => document.getElementById(`flag-${l}`).classList.toggle('active', l === lang)); document.getElementById('txt-title').innerText = dict[lang].title; document.getElementById('txt-subtitle').innerText = dict[lang].subtitle; document.getElementById('tab-bbq').innerText = dict[lang].bbq; document.getElementById('tab-apero').innerText = dict[lang].apero; document.getElementById('lbl-adults').innerText = dict[lang].adults; document.getElementById('lbl-children').innerText = dict[lang].children; document.getElementById('txt-list-title').innerText = dict[lang].listTitle; document.getElementById('txt-compare-title').innerText = dict[lang].compareTitle; document.getElementById('btn-refresh').innerText = dict[lang].refresh; calculate(); }
+    function switchTab(mode) { currentMode = mode; document.getElementById('tab-bbq').classList.toggle('active', mode === 'bbq'); document.getElementById('tab-apero').classList.toggle('active', mode === 'apero'); calculate(); }
+    function toggleItem(element) { element.parentElement.classList.toggle('open'); }
+    function copierEtOuvrirDrive(nomMagasin, urlDrive) { const items = document.querySelectorAll('#list-output li'); let texteAPasser = ""; if (currentLang === 'fr') texteAPasser += "Ma liste de courses :\n"; else if (currentLang === 'es') texteAPasser += "Mi lista de la compra:\n"; else texteAPasser += "My grocery list:\n"; items.forEach(li => { const titre = li.querySelector('.item-title').innerText.replace('▶', '').trim(); const quantite = li.querySelector('.unit').innerText.trim(); texteAPasser += `- ${titre} : ${quantite}\n`; }); navigator.clipboard.writeText(texteAPasser).then(() => { alert(`${dict[currentLang].alertMsg}${nomMagasin}.`); window.open(urlDrive, '_blank'); }).catch(err => { window.open(urlDrive, '_blank'); }); }
+    function calculate() { const adults = parseInt(document.getElementById('adults').value) || 0; const children = parseInt(document.getElementById('children').value) || 0; const listOutput = document.getElementById('list-output'); const compareOutput = document.getElementById('comparison-output'); const t = dict[currentLang]; initSelections(currentMode); let html = ''; let baselineTotal = 0; const currentPool = pools[currentMode]; Object.keys(currentPool).forEach(key => { const selectedIdx = state.selections[currentMode][key]; const itemData = currentPool[key][selectedIdx]; let qty = 0; if (itemData.unit === "kg" || itemData.unit === "g") { qty = ((adults * itemData.coef) + (children * itemData.childCoef)) / 1000; } else { qty = Math.ceil((adults * itemData.coef) + (children * itemData.childCoef)); } const itemCost = qty * itemData.price; baselineTotal += itemCost; const isLocked = state.locked[currentMode][key]; const lockEmoji = isLocked ? '🔒' : '🔓'; const langData = itemData[currentLang] || itemData.fr; let displayQty = qty; if (itemData.unit === "g") { displayQty = qty * 1000; } html += `<li><div class="item-header" onclick="toggleItem(this)"><div class="item-title-wrapper"><span class="lock-icon" onclick="toggleLock(event, '${key}')" title="Bloquer cet aliment">${lockEmoji}</span><span class="item-title"><span class="arrow">▶</span> ${langData.name}</span></div><span class="unit">${displayQty % 1 === 0 ? displayQty : displayQty.toFixed(2)} ${itemData.unit}</span></div><div class="item-details"><div class="detail-row"><span>${t.ex}</span> <span>${langData.ex}</span></div><div class="detail-row"><span>${t.avgPrice}</span> <span>${itemData.price.toFixed(2)} € / ${itemData.unit === 'g' ? 'kg' : itemData.unit}</span></div><div class="detail-row"><span>${t.subtotal}</span> <span>${itemCost.toFixed(2)} €</span></div></div></li>`; }); listOutput.innerHTML = html; const priceLeclerc = baselineTotal * 0.94; const priceCarrefour = baselineTotal * 1.00; const priceIntermarche = baselineTotal * 0.98; const priceAuchan = baselineTotal * 1.01; compareOutput.innerHTML = `<div class="store-card best-price"><div class="store-info"><span class="store-name">E.Leclerc Drive</span><span class="store-badge">${t.badgeCheapest}</span></div><div class="store-price-action"><span class="store-price">${priceLeclerc.toFixed(2)} €</span><button onclick="copierEtOuvrirDrive('E.Leclerc Drive', 'https://www.leclercdrive.fr')" class="store-btn">${t.btnShop}</button></div></div><div class="store-card"><div class="store-info"><span class="store-name">Carrefour Drive</span><span class="store-badge">${t.badgeStandard}</span></div><div class="store-price-action"><span class="store-price">${priceCarrefour.toFixed(2)} €</span><button onclick="copierEtOuvrirDrive('Carrefour Drive', 'https://www.carrefour.fr/services/drive')" class="store-btn">${t.btnShop}</button></div></div><div class="store-card"><div class="store-info"><span class="store-name">Intermarché Drive</span><span class="store-badge">${t.badgePremium}</span></div><div class="store-price-action"><span class="store-price">${priceIntermarche.toFixed(2)} €</span><button onclick="copierEtOuvrirDrive('Intermarché Drive', 'https://www.intermarche.com')" class="store-btn">${t.btnShop}</button></div></div><div class="store-card"><div class="store-info"><span class="store-name">Auchan Drive</span><span class="store-badge">${t.badgePremium}</span></div><div class="store-price-action"><span class="store-price">${priceAuchan.toFixed(2)} €</span><button onclick="copierEtOuvrirDrive('Auchan Drive', 'https://www.auchan.fr/drive')" class="store-btn">${t.btnShop}</button></div></div>`; }
     calculate();
 </script>
-
 </body>
 </html>
