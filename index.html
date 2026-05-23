@@ -332,18 +332,15 @@
             const selectedIdx = state.selections[currentMode][key];
             const itemData = currentPool[key][selectedIdx];
             
-            // Calcul mathématique de la quantité
+            // Calcul mathématique de la quantité (en kg pour les poids, en unités pour le reste)
             let qty = 0;
             if (itemData.unit === "kg" || itemData.unit === "g") {
-                qty = (adults * itemData.coef) + (children * itemData.childCoef);
-                // Correction : conversion en kg pour le calcul du prix
-                qty = qty / 1000;
+                qty = ((adults * itemData.coef) + (children * itemData.childCoef)) / 1000;
             } else {
                 qty = Math.ceil((adults * itemData.coef) + (children * itemData.childCoef));
             }
 
-            // Note: pour le calcul de prix, on utilise qty (en kg) ou le nb d'unités
-            const itemCost = (itemData.unit === "kg" || itemData.unit === "g") ? (qty * itemData.price) : (qty * itemData.price);
+            const itemCost = qty * itemData.price;
             baselineTotal += itemCost;
 
             const isLocked = state.locked[currentMode][key];
@@ -352,8 +349,11 @@
             // Traduction des spécificités techniques
             const langData = itemData[currentLang];
 
-            // Pour l'affichage, on re-calcule une valeur lisible si c'est du poids
-            const displayQty = (itemData.unit === "kg" || itemData.unit === "g") ? (qty * 1000) : qty;
+            // Calcul de l'affichage (Conversion en grammes uniquement si l'unité est 'g')
+            let displayQty = qty;
+            if (itemData.unit === "g") {
+                displayQty = qty * 1000;
+            }
 
             html += `
                 <li>
